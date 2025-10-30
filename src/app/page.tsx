@@ -1,220 +1,175 @@
 import Image from "next/image";
+import type { ReactNode } from "react";
+
+type Highlight = {
+  icon: string;
+  content: ReactNode;
+};
+
+const inlineLinkClass =
+  "underline underline-offset-4 decoration-1 hover:no-underline";
+
+const highlights: readonly Highlight[] = [
+  {
+    icon: "💻",
+    content: (
+      <>
+        was an early engineer at{" "}
+        <a href="https://merge.dev" className={inlineLinkClass}>
+          Merge
+        </a>
+        , where I built and scaled Merge's core distributed syncing engine
+      </>
+    ),
+  },
+  {
+    icon: "🤖",
+    content: (
+      <>
+        was an early-ish engineer at{" "}
+        <a href="https://asana.com" className={inlineLinkClass}>
+          Asana
+        </a>
+        , where I built product features across web, mobile, and our API
+      </>
+    ),
+  },
+  {
+    icon: "📚",
+    content: (
+      <>
+        studied computer science and statistics at Harvard, where I taught{" "}
+        <a href="https://cs50.harvard.edu" className={inlineLinkClass}>
+          CS50
+        </a>{" "}
+        and interned at Biogen and Microsoft
+      </>
+    ),
+  },
+  {
+    icon: "🧬",
+    content: (
+      <>
+        researched{" "}
+        <a
+          href="https://en.wikipedia.org/wiki/Inflammatory_pathway"
+          className={inlineLinkClass}
+        >
+          inflammatory pathways
+        </a>{" "}
+        involved in frontotemporal dementia at UT Southwestern
+      </>
+    ),
+  },
+] as const;
+
+const socialLinks = [
+  { label: "linkedin", href: "https://www.linkedin.com/in/phillip-yu/" },
+  { label: "github", href: "https://github.com/phillipyu" },
+  { label: "email", href: "mailto:phillip.yu.1@gmail.com" },
+  { label: "x", href: "https://twitter.com/yu_phillip" },
+] as const;
 
 export default function Home() {
   return (
-    <div className="min-h-screen bg-white">
-      {/* Desktop Layout */}
-      <div className="hidden lg:flex lg:h-screen lg:items-center lg:justify-center lg:px-8">
-        <div className="flex items-center gap-24 max-w-6xl">
-          {/* Profile Image */}
-          <div className="flex-shrink-0">
-            <div className="w-96 h-96 relative overflow-hidden rounded-full">
-              <Image
-                src="/profile.jpg"
-                alt="Phillip Yu"
-                fill
-                className="object-cover"
-                priority
-              />
-            </div>
-          </div>
-          
-          {/* Content */}
-          <div className="flex-1 space-y-12">
-            {/* Header */}
-            <header className="space-y-6">
-              <div className="flex items-center gap-12">
-                <h1 className="text-6xl font-normal">Phillip Yu</h1>
-                <nav className="flex gap-8">
-                  <a href="#writing" className="text-lg underline hover:no-underline">writing</a>
-                  <a href="#projects" className="text-lg underline hover:no-underline">projects</a>
-                </nav>
-              </div>
-            </header>
-            
-            {/* Bio */}
-            <div className="space-y-6 text-lg leading-relaxed max-w-2xl">
-              <p>
-                I am a full-stack software engineer based out of NYC. Most recently, 
-                I've been tinkering around with ideas in AI x healthcare.
-              </p>
-              
-              <div className="space-y-3">
-                <p>Previously, I:</p>
-                <ul className="space-y-2 ml-1">
-                  <li className="flex items-start gap-3">
-                    <span className="text-sm mt-2">■</span>
-                    <span>was an early engineer at <a href="https://merge.dev" className="underline hover:no-underline">Merge</a>, where I built and scaled Merge's core distributed syncing engine</span>
-                  </li>
-                  <li className="flex items-start gap-3">
-                    <span className="text-sm mt-2">■</span>
-                    <span>was an early-ish engineer at <a href="https://asana.com" className="underline hover:no-underline">Asana</a>, where I built product features across web, mobile, and our API</span>
-                  </li>
-                  <li className="flex items-start gap-3">
-                    <span className="text-sm mt-2">🎓</span>
-                    <span>studied computer science and statistics at Harvard, where I taught <a href="https://cs50.harvard.edu" className="underline hover:no-underline">CS50</a> and interned at Microsoft</span>
-                  </li>
-                </ul>
-              </div>
-              
-              <p>
-                My hobbies include teaching, racket sports, hiking, reading, history, and new languages.
-              </p>
-              
-              {/* Social Links */}
-              <div className="flex gap-1 text-lg">
-                <a href="https://linkedin.com/in/phillipyu" className="underline hover:no-underline">linkedin</a>
-                <span> | </span>
-                <a href="https://github.com/phillipyu" className="underline hover:no-underline">github</a>
-                <span> | </span>
-                <a href="mailto:your-email@example.com" className="underline hover:no-underline">email</a>
-                <span> | </span>
-                <a href="https://twitter.com/phillipyu" className="underline hover:no-underline">twitter</a>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
+    <div className="min-h-screen bg-[#f4f8ed] text-[#1d1d1d]">
+      <div className="mx-auto flex w-full max-w-5xl flex-col px-6 py-14 sm:px-10 lg:px-16 lg:py-20">
+        <header className="flex flex-col gap-2">
+          <h1 className="text-5xl font-light tracking-wide text-[#0f0f0f] sm:text-6xl lg:text-7xl">
+            <a
+              href="/"
+              className="transition-colors hover:text-[#2c2c2c]"
+              aria-label="Back to home"
+            >
+              Phillip Yu
+            </a>
+          </h1>
+        </header>
 
-      {/* Tablet Layout */}
-      <div className="hidden md:block lg:hidden px-8 py-12">
-        <div className="max-w-2xl mx-auto space-y-8">
-          {/* Header */}
-          <header className="text-center space-y-6">
-            <div className="space-y-4">
-              <h1 className="text-4xl font-normal">Phillip Yu</h1>
-              <nav className="flex justify-center gap-6">
-                <a href="#writing" className="text-lg underline hover:no-underline">writing</a>
-                <a href="#projects" className="text-lg underline hover:no-underline">projects</a>
-              </nav>
-            </div>
-          </header>
-          
-          {/* Profile Image */}
-          <div className="flex justify-center">
-            <div className="w-64 h-64 relative overflow-hidden rounded-full">
+        <main className="mt-12 flex flex-col gap-12 lg:mt-16 lg:flex-row lg:items-start lg:gap-20">
+          <div className="flex w-full flex-col items-center gap-6 lg:w-auto lg:pt-4">
+            <div className="relative h-72 w-56 overflow-hidden rounded-[160px] bg-white shadow-[0_28px_60px_rgba(15,15,15,0.08)] sm:h-80 sm:w-64 lg:h-96 lg:w-72">
               <Image
-                src="/profile.jpg"
+                src="/profile.jpeg"
                 alt="Phillip Yu"
                 fill
                 className="object-cover"
                 priority
               />
             </div>
+            <div className="flex flex-wrap justify-center gap-x-2 gap-y-1 text-center text-[#1f1f1f]">
+              {socialLinks.map((link, index) => (
+                <span key={link.label} className="flex items-center gap-2">
+                  <a href={link.href} className={inlineLinkClass}>
+                    {link.label}
+                  </a>
+                  {index < socialLinks.length - 1 ? <span>|</span> : null}
+                </span>
+              ))}
+            </div>
           </div>
-          
-          {/* Bio */}
-          <div className="space-y-6 text-base leading-relaxed">
+
+          <section className="flex-1 space-y-6 leading-relaxed tracking-[0.01em] text-[#262626]">
             <p>
-              I am a full-stack software engineer based out of NYC. Most recently, 
-              I've been tinkering around with ideas in AI x healthcare.
+              I am a full-stack software engineer based out of NYC. Most
+              recently, I've been tinkering around in AI ×
+              life sciences.
             </p>
-            
+
             <div className="space-y-3">
-              <p>Previously, I:</p>
-              <ul className="space-y-2 ml-1">
-                <li className="flex items-start gap-3">
-                  <span className="text-sm mt-1">■</span>
-                  <span>was an early engineer at <a href="https://merge.dev" className="underline hover:no-underline">Merge</a>, where I built and scaled Merge's core distributed syncing engine</span>
-                </li>
-                <li className="flex items-start gap-3">
-                  <span className="text-sm mt-1">■</span>
-                  <span>was an early-ish engineer at <a href="https://asana.com" className="underline hover:no-underline">Asana</a>, where I built product features across web, mobile, and our API</span>
-                </li>
-                <li className="flex items-start gap-3">
-                  <span className="text-sm mt-1">🎓</span>
-                  <span>studied computer science and statistics at Harvard, where I taught <a href="https://cs50.harvard.edu" className="underline hover:no-underline">CS50</a> and interned at Microsoft</span>
-                </li>
+              <p className="text-[#1d1d1d]">Previously, I:</p>
+              <ul className="space-y-3 list-outside list-disc pl-6 marker:text-[#1a1a1a]">
+                {highlights.map((highlight, index) => (
+                  <li
+                    key={`${highlight.icon}-${index}`}
+                  >
+                    <span className="mr-2">
+                      {highlight.icon}
+                    </span>
+                    {highlight.content}
+                  </li>
+                ))}
               </ul>
             </div>
-            
-            <p>
-              My hobbies include teaching, racket sports, hiking, reading, history, and new languages.
-            </p>
-            
-            {/* Social Links */}
-            <div className="flex justify-center gap-1 text-base">
-              <a href="https://linkedin.com/in/phillipyu" className="underline hover:no-underline">linkedin</a>
-              <span> | </span>
-              <a href="https://github.com/phillipyu" className="underline hover:no-underline">github</a>
-              <span> | </span>
-              <a href="mailto:your-email@example.com" className="underline hover:no-underline">email</a>
-              <span> | </span>
-              <a href="https://twitter.com/phillipyu" className="underline hover:no-underline">twitter</a>
-            </div>
-          </div>
-        </div>
-      </div>
 
-      {/* Mobile Layout */}
-      <div className="block md:hidden px-6 py-8">
-        <div className="space-y-6">
-          {/* Header */}
-          <header className="text-center space-y-4">
-            <h1 className="text-3xl font-normal">Phillip Yu</h1>
-            <nav className="flex justify-center gap-6">
-              <a href="#writing" className="text-base underline hover:no-underline">writing</a>
-              <a href="#projects" className="text-base underline hover:no-underline">projects</a>
-            </nav>
-          </header>
-          
-          {/* Profile Image */}
-          <div className="flex justify-center">
-            <div className="w-48 h-48 relative overflow-hidden rounded-full">
-              <Image
-                src="/profile.jpg"
-                alt="Phillip Yu"
-                fill
-                className="object-cover"
-                priority
-              />
-            </div>
-          </div>
-          
-          {/* Bio */}
-          <div className="space-y-6 text-sm leading-relaxed">
             <p>
-              I am a full-stack software engineer based out of NYC. Most recently, 
-              I've been tinkering around with ideas in AI x healthcare.
+              My hobbies include teaching, racket sports, hiking, reading,
+              history, and new languages.
             </p>
-            
-            <div className="space-y-3">
-              <p>Previously, I:</p>
-              <ul className="space-y-2 ml-1">
-                <li className="flex items-start gap-2">
-                  <span className="text-xs mt-1">■</span>
-                  <span>was an early engineer at <a href="https://merge.dev" className="underline hover:no-underline">Merge</a>, where I built and scaled Merge's core distributed syncing engine</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="text-xs mt-1">■</span>
-                  <span>was an early-ish engineer at <a href="https://asana.com" className="underline hover:no-underline">Asana</a>, where I built product features across web, mobile, and our API</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="text-xs mt-1">🎓</span>
-                  <span>studied computer science and statistics at Harvard, where I taught <a href="https://cs50.harvard.edu" className="underline hover:no-underline">CS50</a> and interned at Microsoft</span>
+
+            <section
+              id="writing"
+              className="space-y-4 border-t border-[#dbe2cf] pt-12"
+            >
+              <h2 className="text-2xl font-normal tracking-wide text-[#1d1d1d]">
+                Writing
+              </h2>
+              <ul className="space-y-3 text-[#3f3f3f]">
+                <li>
+                  <a href="https://phillipyu.substack.com/p/canada" className={inlineLinkClass}>
+                    On people-pleasing
+                  </a>
+                  <span className="ml-4 uppercase tracking-wide text-[#7a7a7a]">
+                    2022
+                  </span>
                 </li>
               </ul>
-            </div>
-            
-            <p>
-              My hobbies include teaching, racket sports, hiking, reading, history, and new languages.
-            </p>
-            
-            {/* Social Links */}
-            <div className="text-center text-sm">
-              <div className="flex justify-center gap-1">
-                <a href="https://linkedin.com/in/phillipyu" className="underline hover:no-underline">linkedin</a>
-                <span> | </span>
-                <a href="https://github.com/phillipyu" className="underline hover:no-underline">github</a>
-              </div>
-              <div className="flex justify-center gap-1 mt-1">
-                <a href="mailto:your-email@example.com" className="underline hover:no-underline">email</a>
-                <span> | </span>
-                <a href="https://twitter.com/phillipyu" className="underline hover:no-underline">twitter</a>
-              </div>
-            </div>
-          </div>
-        </div>
+            </section>
+
+            <section
+              id="projects"
+              className="space-y-4 border-t border-[#dbe2cf] pt-12"
+            >
+              <h2 className="text-2xl font-normal tracking-wide text-[#1d1d1d]">
+                Projects
+              </h2>
+              <p className="text-[#2f2f2f]">
+                Coming soon
+              </p>
+            </section>
+
+          </section>
+        </main>
       </div>
     </div>
   );
