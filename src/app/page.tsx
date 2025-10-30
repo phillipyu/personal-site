@@ -40,7 +40,7 @@ const highlights: readonly Highlight[] = [
     content: (
       <>
         studied computer science and statistics at Harvard, where I was a top teaching fellow for{" "}
-        <a href="https://cs50.harvard.edu" className={inlineLinkClass}>
+        <a href="https://en.wikipedia.org/wiki/CS50" className={inlineLinkClass}>
           CS50
         </a>{" "}
         and interned at Biogen and Microsoft
@@ -53,7 +53,7 @@ const highlights: readonly Highlight[] = [
       <>
         researched{" "}
         <a
-          href="https://en.wikipedia.org/wiki/Inflammatory_pathway"
+          href="https://www.jneurosci.org/content/33/21/9202"
           className={inlineLinkClass}
         >
           inflammatory pathways
