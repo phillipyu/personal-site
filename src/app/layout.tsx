@@ -12,7 +12,7 @@ const anonymousPro = Anonymous_Pro({
 
 export const metadata: Metadata = {
   title: "Phillip Yu",
-  description: "Full-stack software engineer based out of NYC, exploring AI x healthcare",
+  description: "Full-stack software engineer based out of NYC, exploring AI x life sciences",
 };
 
 export default function RootLayout({

@@ -1,3 +1,4 @@
+import Link from "next/link";
 import Image from "next/image";
 import type { ReactNode } from "react";
 
@@ -18,7 +19,7 @@ const highlights: readonly Highlight[] = [
         <a href="https://merge.dev" className={inlineLinkClass}>
           Merge
         </a>
-        , where I built and scaled Merge's core distributed syncing engine
+        , where I built and scaled Merge&apos;s core distributed syncing engine
       </>
     ),
   },
@@ -38,7 +39,7 @@ const highlights: readonly Highlight[] = [
     icon: "📚",
     content: (
       <>
-        studied computer science and statistics at Harvard, where I taught{" "}
+        studied computer science and statistics at Harvard, where I was a top teaching fellow for{" "}
         <a href="https://cs50.harvard.edu" className={inlineLinkClass}>
           CS50
         </a>{" "}
@@ -76,13 +77,13 @@ export default function Home() {
       <div className="mx-auto flex w-full max-w-5xl flex-col px-6 py-14 sm:px-10 lg:px-16 lg:py-20">
         <header className="flex flex-col gap-2">
           <h1 className="text-5xl font-light tracking-wide text-[#0f0f0f] sm:text-6xl lg:text-7xl">
-            <a
+            <Link
               href="/"
               className="transition-colors hover:text-[#2c2c2c]"
               aria-label="Back to home"
             >
               Phillip Yu
-            </a>
+            </Link>
           </h1>
         </header>
 
@@ -112,7 +113,7 @@ export default function Home() {
           <section className="flex-1 space-y-6 leading-relaxed tracking-[0.01em] text-[#262626]">
             <p>
               I am a full-stack software engineer based out of NYC. Most
-              recently, I've been tinkering around in AI ×
+              recently, I&apos;ve been tinkering around in AI ×
               life sciences.
             </p>
 
