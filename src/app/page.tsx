@@ -1,6 +1,6 @@
-import Link from "next/link";
 import Image from "next/image";
 import type { ReactNode } from "react";
+import { SmiskiAnimation } from "../components/SmiskiAnimation";
 
 type Highlight = {
   icon: string;
@@ -40,7 +40,7 @@ const highlights: readonly Highlight[] = [
     content: (
       <>
         studied computer science and statistics at Harvard, where I was a top teaching fellow for{" "}
-        <a href="https://en.wikipedia.org/wiki/CS50" className={inlineLinkClass}>
+        <a href="https://cs50.harvard.edu" className={inlineLinkClass}>
           CS50
         </a>{" "}
         and interned at Biogen and Microsoft
@@ -53,7 +53,7 @@ const highlights: readonly Highlight[] = [
       <>
         researched{" "}
         <a
-          href="https://www.jneurosci.org/content/33/21/9202"
+          href="https://en.wikipedia.org/wiki/Inflammatory_pathway"
           className={inlineLinkClass}
         >
           inflammatory pathways
@@ -74,17 +74,14 @@ const socialLinks = [
 export default function Home() {
   return (
     <div className="min-h-screen bg-[#f4f8ed] text-[#1d1d1d]">
-      <div className="mx-auto flex w-full max-w-5xl flex-col px-6 py-14 sm:px-10 lg:px-16 lg:py-20">
+      <div className="mx-auto flex w-full max-w-5xl flex-col px-6 pb-14 pt-8 sm:px-10 lg:px-16 lg:pb-20 lg:pt-12">
         <header className="flex flex-col gap-2">
-          <h1 className="text-5xl font-light tracking-wide text-[#0f0f0f] sm:text-6xl lg:text-7xl">
-            <Link
-              href="/"
-              className="transition-colors hover:text-[#2c2c2c]"
-              aria-label="Back to home"
-            >
+          <div className="flex items-end justify-between gap-6">
+            <h1 className="text-3xl font-light tracking-wide text-[#0f0f0f] sm:text-4xl lg:text-5xl">
               Phillip Yu
-            </Link>
-          </h1>
+            </h1>
+            <SmiskiAnimation className="translate-y-6" showCaption={false} />
+          </div>
         </header>
 
         <main className="mt-12 flex flex-col gap-12 lg:mt-16 lg:flex-row lg:items-start lg:gap-20">
@@ -110,7 +107,7 @@ export default function Home() {
             </div>
           </div>
 
-          <section className="flex-1 space-y-6 leading-relaxed tracking-[0.01em] text-[#262626]">
+          <section className="flex-1 space-y-5 leading-6 tracking-[0.01em] text-[#262626]">
             <p>
               I am a full-stack software engineer based out of NYC. Most
               recently, I&apos;ve been tinkering around in AI ×
