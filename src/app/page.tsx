@@ -8,7 +8,7 @@ type Highlight = {
 };
 
 const inlineLinkClass =
-  "underline underline-offset-4 decoration-1 hover:no-underline";
+  "underline underline-offset-4 decoration-1 hover:no-underline transition-colors duration-150";
 
 const highlights: readonly Highlight[] = [
   {
@@ -73,20 +73,23 @@ const socialLinks = [
 
 export default function Home() {
   return (
-    <div className="min-h-screen bg-[#f4f8ed] text-[#1d1d1d]">
-      <div className="mx-auto flex w-full max-w-5xl flex-col px-6 pb-14 pt-8 sm:px-10 lg:px-16 lg:pb-20 lg:pt-12">
+    <div className="min-h-screen bg-[var(--background)] text-[var(--foreground)] transition-colors duration-200">
+      <div className="mx-auto flex w-full max-w-5xl flex-col px-6 pb-14 pt-8 transition-colors duration-200 sm:px-10 lg:px-16 lg:pb-20 lg:pt-12">
         <header className="flex flex-col gap-2">
           <div className="flex items-end justify-between gap-6">
-            <h1 className="text-3xl font-light tracking-wide text-[#0f0f0f] sm:text-4xl lg:text-5xl">
+            <h1 className="text-3xl font-light tracking-wide sm:text-4xl lg:text-5xl">
               Phillip Yu
             </h1>
-            <SmiskiAnimation className="translate-y-6" showCaption={false} />
+            <SmiskiAnimation
+              className="translate-y-5 [&>img]:h-20 [&>img]:w-20 sm:[&>img]:h-24 sm:[&>img]:w-24 lg:[&>img]:h-28 lg:[&>img]:w-28"
+              showCaption={false}
+            />
           </div>
         </header>
 
         <main className="mt-12 flex flex-col gap-12 lg:mt-16 lg:flex-row lg:items-start lg:gap-20">
           <div className="flex w-full flex-col items-center gap-6 lg:w-auto lg:pt-4">
-            <div className="relative h-72 w-56 overflow-hidden rounded-[160px] bg-white shadow-[0_28px_60px_rgba(15,15,15,0.08)] sm:h-80 sm:w-64 lg:h-96 lg:w-72">
+            <div className="relative h-72 w-56 overflow-hidden rounded-[160px] bg-[var(--surface-elevated)] shadow-[0_28px_60px_rgba(15,15,15,0.08)] transition-colors duration-200 sm:h-80 sm:w-64 lg:h-96 lg:w-72">
               <Image
                 src="/profile.jpeg"
                 alt="Phillip Yu"
@@ -95,7 +98,7 @@ export default function Home() {
                 priority
               />
             </div>
-            <div className="flex flex-wrap justify-center gap-x-2 gap-y-1 text-center text-[#1f1f1f]">
+            <div className="flex flex-wrap justify-center gap-x-2 gap-y-1 text-center text-[var(--text-secondary)] transition-colors duration-200">
               {socialLinks.map((link, index) => (
                 <span key={link.label} className="flex items-center gap-2">
                   <a href={link.href} className={inlineLinkClass}>
@@ -107,7 +110,7 @@ export default function Home() {
             </div>
           </div>
 
-          <section className="flex-1 space-y-5 leading-6 tracking-[0.01em] text-[#262626]">
+          <section className="flex-1 space-y-5 leading-6 tracking-[0.01em] text-[var(--text-secondary)] transition-colors duration-200">
             <p>
               I am a full-stack software engineer based out of NYC. Most
               recently, I&apos;ve been tinkering around in AI ×
@@ -115,8 +118,8 @@ export default function Home() {
             </p>
 
             <div className="space-y-3">
-              <p className="text-[#1d1d1d]">Previously, I:</p>
-              <ul className="space-y-3 list-outside list-disc pl-6 marker:text-[#1a1a1a]">
+              <p className="text-[var(--foreground)] transition-colors duration-200">Previously, I:</p>
+              <ul className="space-y-3 list-outside list-disc pl-6 marker:text-[var(--text-muted)] transition-colors duration-200">
                 {highlights.map((highlight, index) => (
                   <li
                     key={`${highlight.icon}-${index}`}
@@ -137,17 +140,17 @@ export default function Home() {
 
             <section
               id="writing"
-              className="space-y-4 border-t border-[#dbe2cf] pt-12"
+              className="space-y-4 border-t border-[var(--border-muted)] pt-12 transition-colors duration-200"
             >
-              <h2 className="text-2xl font-normal tracking-wide text-[#1d1d1d]">
+              <h2 className="text-2xl font-normal tracking-wide text-[var(--foreground)] transition-colors duration-200">
                 Writing
               </h2>
-              <ul className="space-y-3 text-[#3f3f3f]">
+              <ul className="space-y-3 text-[var(--text-muted)] transition-colors duration-200">
                 <li>
                   <a href="https://phillipyu.substack.com/p/canada" className={inlineLinkClass}>
                     On people-pleasing
                   </a>
-                  <span className="ml-4 uppercase tracking-wide text-[#7a7a7a]">
+                  <span className="ml-4 uppercase tracking-wide text-[var(--text-caption)] transition-colors duration-200">
                     2022
                   </span>
                 </li>
@@ -156,12 +159,12 @@ export default function Home() {
 
             <section
               id="projects"
-              className="space-y-4 border-t border-[#dbe2cf] pt-12"
+              className="space-y-4 border-t border-[var(--border-muted)] pt-12 transition-colors duration-200"
             >
-              <h2 className="text-2xl font-normal tracking-wide text-[#1d1d1d]">
+              <h2 className="text-2xl font-normal tracking-wide text-[var(--foreground)] transition-colors duration-200">
                 Projects
               </h2>
-              <p className="text-[#2f2f2f]">
+              <p className="text-[var(--text-secondary)] transition-colors duration-200">
                 Coming soon
               </p>
             </section>

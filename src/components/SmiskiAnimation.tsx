@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 
 type SmiskiSteady = "sleep" | "rest" | "awake";
 type SmiskiTransition =
@@ -60,6 +60,7 @@ type SmiskiAnimationProps = {
 export function SmiskiAnimation({ className, showCaption = true }: SmiskiAnimationProps) {
   const [phase, setPhase] = useState<SmiskiPhase>("sleep");
   const [sequenceKey, setSequenceKey] = useState(0);
+  const [isDark, setIsDark] = useState(false);
 
   const steadyRef = useRef<SmiskiSteady>("sleep");
   const hoveringRef = useRef(false);
@@ -77,6 +78,12 @@ export function SmiskiAnimation({ className, showCaption = true }: SmiskiAnimati
         const img = new window.Image();
         img.src = src;
       });
+
+      const stored = window.localStorage.getItem("theme");
+      const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+      const initialDark = stored ? stored === "dark" : prefersDark;
+      setIsDark(initialDark);
+      document.documentElement.classList.toggle("dark", initialDark);
     }
 
     return () => {
@@ -188,6 +195,20 @@ export function SmiskiAnimation({ className, showCaption = true }: SmiskiAnimati
     return steadyRef.current;
   };
 
+  const applyTheme = useCallback((nextDark: boolean) => {
+    if (typeof document === "undefined" || typeof window === "undefined") return;
+    document.documentElement.classList.toggle("dark", nextDark);
+    window.localStorage.setItem("theme", nextDark ? "dark" : "light");
+  }, []);
+
+  const toggleTheme = () => {
+    setIsDark((prev) => {
+      const next = !prev;
+      applyTheme(next);
+      return next;
+    });
+  };
+
   const handlePointerEnter = () => {
     hoveringRef.current = true;
     clearDecayTimer();
@@ -218,9 +239,20 @@ export function SmiskiAnimation({ className, showCaption = true }: SmiskiAnimati
 
   return (
     <div
-      className={`flex flex-col items-center ${className ?? ""}`}
+      role="button"
+      tabIndex={0}
+      aria-pressed={isDark}
+      aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}
+      className={`flex flex-col items-center cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[#a1b57a] focus-visible:ring-offset-[var(--background)] ${className ?? ""}`}
       onPointerEnter={handlePointerEnter}
       onPointerLeave={handlePointerLeave}
+      onClick={toggleTheme}
+      onKeyDown={(event) => {
+        if (event.key === "Enter" || event.key === " " || event.key === "Spacebar") {
+          event.preventDefault();
+          toggleTheme();
+        }
+      }}
     >
       <img
         key={isTransitionPhase(phase) ? `${phase}-${sequenceKey}` : phase}
