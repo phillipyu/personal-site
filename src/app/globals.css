@@ -42,3 +42,15 @@ a {
   color: var(--link-color);
   transition: color 200ms ease;
 }
+
+.smiski-wrapper {
+  position: relative;
+}
+
+.smiski-img {
+  transition: filter 200ms ease;
+}
+
+.dark .smiski-img {
+  filter: drop-shadow(0 0 2px rgba(248, 252, 255, 0.9));
+}

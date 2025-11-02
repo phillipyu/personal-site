@@ -1,6 +1,7 @@
+/* eslint-disable @next/next/no-img-element */
 "use client";
 
-import { useEffect, useRef, useState, useCallback } from "react";
+import { useEffect, useRef, useState, useCallback, useId } from "react";
 
 type SmiskiSteady = "sleep" | "rest" | "awake";
 type SmiskiTransition =
@@ -31,46 +32,133 @@ const phaseSources: Record<SmiskiPhase, string> = {
 const isTransitionPhase = (
   value: SmiskiPhase,
 ): value is SmiskiTransition =>
-  Object.prototype.hasOwnProperty.call(transitionSources, value);
+  value in transitionSources;
 
 const transitionDurations: Record<SmiskiTransition, number> = {
   stir: 650,
   wake: 800,
-  "stir-reverse": 600,
-  "wake-reverse": 650,
+  "stir-reverse": 650,
+  "wake-reverse": 800,
 };
 
-const hoverDelay = 200;
-const hoverAdvanceDelay = 1000;
-const decayDelays: Record<Exclude<SmiskiSteady, "sleep">, number> = {
-  rest: 6500,
-  awake: 8500,
+const HOVER_DELAY = 200;
+const DECAY_DELAYS: Record<SmiskiSteady, number> = {
+  sleep: 4000,
+  rest: 4000,
+  awake: 4000,
 };
 
-const wait = (ms: number) =>
-  new Promise((resolve) => {
-    setTimeout(resolve, ms);
-  });
+const transitions: Record<SmiskiSteady, Partial<Record<SmiskiSteady, SmiskiTransition[]>>> = {
+  sleep: {
+    rest: ["stir"],
+    awake: ["stir", "wake"],
+  },
+  rest: {
+    sleep: ["stir-reverse"],
+    awake: ["wake"],
+  },
+  awake: {
+    rest: ["wake-reverse"],
+    sleep: ["wake-reverse", "stir-reverse"],
+  },
+};
 
 type SmiskiAnimationProps = {
   className?: string;
   showCaption?: boolean;
 };
 
+type SmiskiSvgProps = {
+  src: string;
+  alt: string;
+  dark: boolean;
+};
+
+function SmiskiSvg({ src, alt, dark }: SmiskiSvgProps) {
+  const uniqueId = useId();
+
+  if (!dark) {
+    return (
+      <img
+        src={src}
+        alt={alt}
+        className="smiski-img h-24 w-24 select-none object-contain transition-all duration-300 sm:h-28 sm:w-28"
+        draggable={false}
+      />
+    );
+  }
+
+  const outlineFilterId = `smiski-outline-${uniqueId}`;
+  const fillFilterId = `smiski-fill-${uniqueId}`;
+  const fillMaskId = `smiski-mask-${uniqueId}`;
+
+  return (
+    <svg
+      className="smiski-img h-24 w-24 select-none transition-all duration-300 sm:h-28 sm:w-28"
+      viewBox="0 0 512 512"
+      preserveAspectRatio="xMidYMid meet"
+      role="img"
+      aria-label={alt}
+    >
+      <defs>
+        <filter id={outlineFilterId} colorInterpolationFilters="sRGB">
+          <feColorMatrix
+            type="matrix"
+            values="
+              -1 0 0 0 1
+              0 -1 0 0 1
+              0 0 -1 0 1
+              0 0 0 1 0
+            "
+          />
+        </filter>
+
+        <filter id={fillFilterId} colorInterpolationFilters="sRGB">
+          <feMorphology in="SourceAlpha" operator="dilate" radius="28" result="expanded" />
+          <feComponentTransfer>
+            <feFuncA type="table" tableValues="0 1" />
+          </feComponentTransfer>
+        </filter>
+
+        <mask id={fillMaskId} maskUnits="userSpaceOnUse">
+          <image
+            href={src}
+            x="0"
+            y="0"
+            width="512"
+            height="512"
+            filter={`url(#${fillFilterId})`}
+          />
+        </mask>
+      </defs>
+
+      <rect width="512" height="512" fill="rgba(150,255,190,0.85)" mask={`url(#${fillMaskId})`} />
+
+      <image
+        href={src}
+        x="0"
+        y="0"
+        width="512"
+        height="512"
+        filter={`url(#${outlineFilterId})`}
+      />
+    </svg>
+  );
+}
+
 export function SmiskiAnimation({ className, showCaption = true }: SmiskiAnimationProps) {
-  const [phase, setPhase] = useState<SmiskiPhase>("sleep");
-  const [sequenceKey, setSequenceKey] = useState(0);
   const [isDark, setIsDark] = useState(false);
+  const [currentSrc, setCurrentSrc] = useState<string>(phaseSources.sleep);
 
   const steadyRef = useRef<SmiskiSteady>("sleep");
   const hoveringRef = useRef(false);
   const transitionRunningRef = useRef(false);
 
-  const hoverTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const hoverAdvanceTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(
-    null,
-  );
-  const decayTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const hoverTimeoutRef = useRef<number | null>(null);
+  const decayTimeoutRef = useRef<number | null>(null);
+  const transitionTokenRef = useRef(0);
+  const activeTimeoutRef = useRef<number | null>(null);
+  const activeWaitResolverRef = useRef<(() => void) | null>(null);
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -84,17 +172,28 @@ export function SmiskiAnimation({ className, showCaption = true }: SmiskiAnimati
       const initialDark = stored ? stored === "dark" : prefersDark;
       setIsDark(initialDark);
       document.documentElement.classList.toggle("dark", initialDark);
+      window.localStorage.setItem("theme", initialDark ? "dark" : "light");
+      const baseState: SmiskiSteady = initialDark ? "awake" : "sleep";
+      steadyRef.current = baseState;
+      setCurrentSrc(phaseSources[baseState]);
     }
 
     return () => {
       if (hoverTimeoutRef.current) {
-        clearTimeout(hoverTimeoutRef.current);
-      }
-      if (hoverAdvanceTimeoutRef.current) {
-        clearTimeout(hoverAdvanceTimeoutRef.current);
+        window.clearTimeout(hoverTimeoutRef.current);
+        hoverTimeoutRef.current = null;
       }
       if (decayTimeoutRef.current) {
-        clearTimeout(decayTimeoutRef.current);
+        window.clearTimeout(decayTimeoutRef.current);
+        decayTimeoutRef.current = null;
+      }
+      if (activeTimeoutRef.current) {
+        window.clearTimeout(activeTimeoutRef.current);
+        activeTimeoutRef.current = null;
+      }
+      if (activeWaitResolverRef.current) {
+        activeWaitResolverRef.current();
+        activeWaitResolverRef.current = null;
       }
     };
   }, []);
@@ -111,88 +210,94 @@ export function SmiskiAnimation({ className, showCaption = true }: SmiskiAnimati
     if (hoveringRef.current || transitionRunningRef.current) return;
 
     const currentSteady = steadyRef.current;
-    if (currentSteady === "sleep") return;
+    const baseline = isDark ? "awake" : "sleep";
+    if (currentSteady === baseline) return;
 
-    const delay = decayDelays[currentSteady];
-    decayTimeoutRef.current = setTimeout(async () => {
+    const nextTarget = isDark
+      ? currentSteady === "sleep"
+        ? "rest"
+        : "awake"
+      : currentSteady === "awake"
+      ? "rest"
+      : "sleep";
+
+    const delay = DECAY_DELAYS[currentSteady] ?? 6000;
+    decayTimeoutRef.current = window.setTimeout(() => {
       decayTimeoutRef.current = null;
       if (hoveringRef.current) return;
-      await runTransition("down");
-      if (!hoveringRef.current) {
-        startDecayChain();
-      }
+      void goToState(nextTarget).then(() => {
+        if (!hoveringRef.current) {
+          startDecayChain();
+        }
+      });
     }, delay);
   };
 
-  const scheduleHoverAdvance = () => {
-    if (!hoveringRef.current) return;
-    if (steadyRef.current === "awake") return;
-
-    if (hoverAdvanceTimeoutRef.current) {
-      clearTimeout(hoverAdvanceTimeoutRef.current);
+  const goToState = async (target: SmiskiSteady) => {
+    const from = steadyRef.current;
+    if (from === target) {
+      setCurrentSrc(phaseSources[target]);
+      return;
     }
 
-    hoverAdvanceTimeoutRef.current = setTimeout(() => {
-      hoverAdvanceTimeoutRef.current = null;
-      if (!hoveringRef.current) {
-        startDecayChain();
-        return;
-      }
-      if (transitionRunningRef.current) {
-        scheduleHoverAdvance();
-        return;
-      }
-      void runTransition("up");
-    }, hoverAdvanceDelay);
-  };
-
-  const stepThroughTransitions = async (
-    transitions: SmiskiTransition[],
-    nextSteady: SmiskiSteady,
-  ) => {
+    const steps = transitions[from]?.[target];
+    const token = transitionTokenRef.current + 1;
+    transitionTokenRef.current = token;
     transitionRunningRef.current = true;
     clearDecayTimer();
-    if (hoverAdvanceTimeoutRef.current) {
-      clearTimeout(hoverAdvanceTimeoutRef.current);
-      hoverAdvanceTimeoutRef.current = null;
+    if (activeTimeoutRef.current) {
+      clearTimeout(activeTimeoutRef.current);
+      activeTimeoutRef.current = null;
+    }
+    if (activeWaitResolverRef.current) {
+      activeWaitResolverRef.current();
+      activeWaitResolverRef.current = null;
     }
 
-    for (const step of transitions) {
-      setPhase(step);
-      setSequenceKey((current) => current + 1);
-      await wait(transitionDurations[step]);
+    if (!steps || steps.length === 0) {
+      steadyRef.current = target;
+      setCurrentSrc(phaseSources[target]);
+      transitionRunningRef.current = false;
+      return;
     }
 
-    steadyRef.current = nextSteady;
-    setPhase(nextSteady);
+    for (const step of steps) {
+      if (transitionTokenRef.current !== token) {
+        transitionRunningRef.current = false;
+        return;
+      }
+
+      const src = isTransitionPhase(step)
+        ? `${phaseSources[step]}?cycle=${performance.now()}`
+        : phaseSources[step];
+      setCurrentSrc(src);
+      await new Promise<void>((resolve) => {
+        const duration = transitionDurations[step];
+        const timeout = window.setTimeout(() => {
+          if (transitionTokenRef.current === token) {
+            activeTimeoutRef.current = null;
+            activeWaitResolverRef.current = null;
+            resolve();
+          }
+        }, duration);
+        activeTimeoutRef.current = timeout;
+        activeWaitResolverRef.current = () => {
+          clearTimeout(timeout);
+          activeTimeoutRef.current = null;
+          activeWaitResolverRef.current = null;
+          resolve();
+        };
+      });
+    }
+
+    if (transitionTokenRef.current !== token) {
+      transitionRunningRef.current = false;
+      return;
+    }
+
+    steadyRef.current = target;
+    setCurrentSrc(phaseSources[target]);
     transitionRunningRef.current = false;
-
-    if (hoveringRef.current) {
-      scheduleHoverAdvance();
-    } else {
-      startDecayChain();
-    }
-  };
-
-  const runTransition = async (direction: "up" | "down") => {
-    if (transitionRunningRef.current) return steadyRef.current;
-
-    const currentSteady = steadyRef.current;
-    if (direction === "up") {
-      if (currentSteady === "sleep") {
-        await stepThroughTransitions(["stir"], "rest");
-      } else if (currentSteady === "rest") {
-        await stepThroughTransitions(["wake"], "awake");
-      }
-    } else {
-      if (currentSteady === "awake") {
-        await stepThroughTransitions(["wake-reverse"], "rest");
-      } else if (currentSteady === "rest") {
-        await stepThroughTransitions(["stir-reverse"], "sleep");
-      }
-    }
-
-    return steadyRef.current;
   };
 
   const applyTheme = useCallback((nextDark: boolean) => {
@@ -201,24 +306,44 @@ export function SmiskiAnimation({ className, showCaption = true }: SmiskiAnimati
     window.localStorage.setItem("theme", nextDark ? "dark" : "light");
   }, []);
 
-  const toggleTheme = () => {
-    setIsDark((prev) => {
-      const next = !prev;
-      applyTheme(next);
-      return next;
-    });
-  };
+  const setThemeImmediate = useCallback(
+    (nextDark: boolean) => {
+      applyTheme(nextDark);
+      setIsDark(nextDark);
+    },
+    [applyTheme],
+  );
 
   const handlePointerEnter = () => {
     hoveringRef.current = true;
     clearDecayTimer();
 
-    if (hoverTimeoutRef.current || transitionRunningRef.current) return;
-
-    hoverTimeoutRef.current = setTimeout(() => {
+    if (hoverTimeoutRef.current) {
+      clearTimeout(hoverTimeoutRef.current);
       hoverTimeoutRef.current = null;
-      void runTransition("up");
-    }, hoverDelay);
+    }
+
+    if (transitionRunningRef.current) return;
+
+    const current = steadyRef.current;
+    const target = isDark
+      ? current === "awake"
+        ? "rest"
+        : null
+      : current === "sleep"
+      ? "rest"
+      : null;
+
+    if (!target) return;
+
+    hoverTimeoutRef.current = window.setTimeout(() => {
+      hoverTimeoutRef.current = null;
+      void goToState(target).then(() => {
+        if (!hoveringRef.current) {
+          startDecayChain();
+        }
+      });
+    }, HOVER_DELAY);
   };
 
   const handlePointerLeave = () => {
@@ -229,12 +354,28 @@ export function SmiskiAnimation({ className, showCaption = true }: SmiskiAnimati
       hoverTimeoutRef.current = null;
     }
 
-    if (hoverAdvanceTimeoutRef.current) {
-      clearTimeout(hoverAdvanceTimeoutRef.current);
-      hoverAdvanceTimeoutRef.current = null;
+    startDecayChain();
+  };
+
+  const handleClick = () => {
+    if (hoverTimeoutRef.current) {
+      clearTimeout(hoverTimeoutRef.current);
+      hoverTimeoutRef.current = null;
     }
 
-    startDecayChain();
+    clearDecayTimer();
+
+    const nextDark = !isDark;
+    const target: SmiskiSteady = nextDark ? "awake" : "sleep";
+
+    setThemeImmediate(nextDark);
+
+    if (transitionRunningRef.current) {
+      transitionTokenRef.current += 1;
+      transitionRunningRef.current = false;
+    }
+
+    void goToState(target);
   };
 
   return (
@@ -243,30 +384,20 @@ export function SmiskiAnimation({ className, showCaption = true }: SmiskiAnimati
       tabIndex={0}
       aria-pressed={isDark}
       aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}
-      className={`flex flex-col items-center cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[#a1b57a] focus-visible:ring-offset-[var(--background)] ${className ?? ""}`}
+      className={`smiski-wrapper flex flex-col items-center cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[#a1b57a] focus-visible:ring-offset-[var(--background)] ${className ?? ""}`}
       onPointerEnter={handlePointerEnter}
       onPointerLeave={handlePointerLeave}
-      onClick={toggleTheme}
+      onClick={handleClick}
       onKeyDown={(event) => {
         if (event.key === "Enter" || event.key === " " || event.key === "Spacebar") {
           event.preventDefault();
-          toggleTheme();
+          handleClick();
         }
       }}
     >
-      <img
-        key={isTransitionPhase(phase) ? `${phase}-${sequenceKey}` : phase}
-        src={
-          isTransitionPhase(phase)
-            ? `${phaseSources[phase]}?cycle=${sequenceKey}`
-            : phaseSources[phase]
-        }
-        alt="Smiski animation"
-        className="h-24 w-24 select-none object-contain sm:h-28 sm:w-28"
-        draggable={false}
-      />
+      <SmiskiSvg src={currentSrc} alt="Smiski animation" dark={isDark} />
       {showCaption ? (
-        <p className="mt-2 text-xs uppercase tracking-[0.3em] text-[#7a7a7a]">
+        <p className="mt-2 text-xs uppercase tracking-[0.3em] text-[var(--text-caption)] transition-colors duration-200">
           smiski
         </p>
       ) : null}

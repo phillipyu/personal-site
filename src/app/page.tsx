@@ -10,13 +10,18 @@ type Highlight = {
 const inlineLinkClass =
   "underline underline-offset-4 decoration-1 hover:no-underline transition-colors duration-150";
 
+const externalLinkProps = {
+  target: "_blank",
+  rel: "noopener noreferrer",
+} as const;
+
 const highlights: readonly Highlight[] = [
   {
     icon: "💻",
     content: (
       <>
         was an early engineer at{" "}
-        <a href="https://merge.dev" className={inlineLinkClass}>
+        <a href="https://merge.dev" {...externalLinkProps} className={inlineLinkClass}>
           Merge
         </a>
         , where I built and scaled Merge&apos;s core distributed syncing engine
@@ -28,7 +33,7 @@ const highlights: readonly Highlight[] = [
     content: (
       <>
         was an early-ish engineer at{" "}
-        <a href="https://asana.com" className={inlineLinkClass}>
+        <a href="https://asana.com" {...externalLinkProps} className={inlineLinkClass}>
           Asana
         </a>
         , where I built product features across web, mobile, and our API
@@ -40,7 +45,7 @@ const highlights: readonly Highlight[] = [
     content: (
       <>
         studied computer science and statistics at Harvard, where I was a top teaching fellow for{" "}
-        <a href="https://cs50.harvard.edu" className={inlineLinkClass}>
+        <a href="https://cs50.harvard.edu" {...externalLinkProps} className={inlineLinkClass}>
           CS50
         </a>{" "}
         and interned at Biogen and Microsoft
@@ -53,7 +58,8 @@ const highlights: readonly Highlight[] = [
       <>
         researched{" "}
         <a
-          href="https://en.wikipedia.org/wiki/Inflammatory_pathway"
+          href="https://www.jneurosci.org/content/33/21/9202"
+          {...externalLinkProps}
           className={inlineLinkClass}
         >
           inflammatory pathways
@@ -101,7 +107,7 @@ export default function Home() {
             <div className="flex flex-wrap justify-center gap-x-2 gap-y-1 text-center text-[var(--text-secondary)] transition-colors duration-200">
               {socialLinks.map((link, index) => (
                 <span key={link.label} className="flex items-center gap-2">
-                  <a href={link.href} className={inlineLinkClass}>
+                  <a href={link.href} {...externalLinkProps} className={inlineLinkClass}>
                     {link.label}
                   </a>
                   {index < socialLinks.length - 1 ? <span>|</span> : null}
@@ -147,7 +153,11 @@ export default function Home() {
               </h2>
               <ul className="space-y-3 text-[var(--text-muted)] transition-colors duration-200">
                 <li>
-                  <a href="https://phillipyu.substack.com/p/canada" className={inlineLinkClass}>
+                  <a
+                    href="https://phillipyu.substack.com/p/canada"
+                    {...externalLinkProps}
+                    className={inlineLinkClass}
+                  >
                     On people-pleasing
                   </a>
                   <span className="ml-4 uppercase tracking-wide text-[var(--text-caption)] transition-colors duration-200">
