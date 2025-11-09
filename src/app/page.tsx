@@ -124,7 +124,7 @@ export default function Home() {
             </p>
 
             <div className="space-y-3">
-              <p className="text-[var(--foreground)] transition-colors duration-200">Previously, I:</p>
+              <p className="transition-colors duration-200">Previously, I:</p>
               <ul className="space-y-3 list-outside list-disc pl-6 marker:text-[var(--text-muted)] transition-colors duration-200">
                 {highlights.map((highlight, index) => (
                   <li
