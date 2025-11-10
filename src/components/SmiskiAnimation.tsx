@@ -29,11 +29,6 @@ const phaseSources: Record<SmiskiPhase, string> = {
   ...transitionSources,
 };
 
-const isTransitionPhase = (
-  value: SmiskiPhase,
-): value is SmiskiTransition =>
-  value in transitionSources;
-
 const transitionDurations: Record<SmiskiTransition, number> = {
   stir: 650,
   wake: 800,
@@ -161,9 +156,6 @@ export function SmiskiAnimation({ className }: SmiskiAnimationProps) {
   const hoveringRef = useRef(false);
   const transitionRunningRef = useRef(false);
 
-  const hoverTimeoutRef = useRef<number | null>(null);
-  const decayTimeoutRef = useRef<number | null>(null);
-
   useEffect(() => {
     Object.values(phaseSources).forEach((src) => {
       const img = new window.Image();
@@ -182,9 +174,6 @@ export function SmiskiAnimation({ className }: SmiskiAnimationProps) {
     const baseState: SmiskiSteady = initialDark ? "awake" : "sleep";
     steadyRef.current = baseState;
     setCurrentSrc(phaseSources[baseState]);
-    
-    clearDecayTimer();
-    clearHoverTimer();
   }, []);
 
   useEffect(() => {
@@ -192,23 +181,15 @@ export function SmiskiAnimation({ className }: SmiskiAnimationProps) {
     window.localStorage.setItem("theme", isDark ? "dark" : "light");
   }, [isDark]);
 
-  const clearDecayTimer = () => {
-    if (decayTimeoutRef.current) {
-      clearTimeout(decayTimeoutRef.current);
-      decayTimeoutRef.current = null;
+  useEffect(() => {
+    // ALWAYS decay towards the baseline if the current state is NOT the baseline
+    const baseline = isDark ? "awake" : "sleep";
+    if (steadyRef.current !== baseline) {
+      startDecay();
     }
-  };
-
-  const clearHoverTimer = () => {
-    if (hoverTimeoutRef.current) {
-      clearTimeout(hoverTimeoutRef.current);
-      hoverTimeoutRef.current = null;
-    }
-  }
+  }, [steadyRef, isDark, hoveringRef])
 
   const startDecay = () => {
-    clearDecayTimer();
-
     // Don't decay if a transition is already happening
     // TODO: wait until the transition is done before continuing the decay
     if (transitionRunningRef.current) return;
@@ -218,8 +199,7 @@ export function SmiskiAnimation({ className }: SmiskiAnimationProps) {
     if (currentSteady === baseline) return;
 
     const delay = DECAY_DELAYS[currentSteady];
-    decayTimeoutRef.current = window.setTimeout(() => {
-      decayTimeoutRef.current = null;
+     window.setTimeout(() => {
       if (hoveringRef.current) return;
 
       goToState(baseline);
@@ -236,9 +216,6 @@ export function SmiskiAnimation({ className }: SmiskiAnimationProps) {
     if (transitionRunningRef.current) {
       return;
     }
-
-    // 1. Reset the decay timer
-    clearDecayTimer();
 
     const transitionSteps = transitions[from]?.[target] ?? [];
     transitionRunningRef.current = true;
@@ -263,8 +240,6 @@ export function SmiskiAnimation({ className }: SmiskiAnimationProps) {
   const handlePointerEnter = () => {
     // 1. Reset the decay and hover timers
     hoveringRef.current = true;
-    clearDecayTimer();
-    clearHoverTimer();
 
     if (transitionRunningRef.current) return;
 
@@ -280,27 +255,16 @@ export function SmiskiAnimation({ className }: SmiskiAnimationProps) {
       return;
     }
 
-    hoverTimeoutRef.current = window.setTimeout(() => {
-      goToState(target).then(() => {
-        if (!hoveringRef.current) {
-          // Only start decaying back to the base state if we're not still hovering
-          startDecay();
-        }
-      });
+    window.setTimeout(() => {
+      goToState(target);
     }, HOVER_DELAY);
   };
 
   const handlePointerLeave = () => {
     hoveringRef.current = false;
-    clearHoverTimer();
-    startDecay();
   };
 
   const handleClick = () => {
-    // 1. Reset hover and decay timers
-    clearHoverTimer();
-    clearDecayTimer();
-
     // 2. Toggle dark mode
     const nextDark = !isDark;
     const target: SmiskiSteady = nextDark ? "awake" : "sleep";
