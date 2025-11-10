@@ -1,6 +1,7 @@
 /* eslint-disable @next/next/no-img-element */
 "use client";
 
+import { useTheme } from "next-themes";
 import { useEffect, useRef, useState, useId } from "react";
 
 type SmiskiSteady = "sleep" | "rest" | "awake";
@@ -145,14 +146,9 @@ function SmiskiSvg({ src, alt, dark }: SmiskiSvgProps) {
 }
 
 export function SmiskiAnimation({ className }: SmiskiAnimationProps) {
-  // const [isDark, setIsDark] = useState(false);
-  // const [isDark, setIsDark] = useState(() => {
-  //   if (typeof window === "undefined") return false; // during SSR
-  //   const stored = window.localStorage.getItem("theme");
-  //   const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-  //   return stored ? stored === "dark" : prefersDark;
-  // });
-  const [isDark, setIsDark] = useState(false);
+  const [mounted, setMounted] = useState(false);
+  const { theme, setTheme } = useTheme();
+  const isDark = theme === "dark";
   const baseline = isDark ? "awake" : "sleep";
 
   const [currentSrc, setCurrentSrc] = useState<string>(phaseSources[baseline]);
@@ -161,27 +157,20 @@ export function SmiskiAnimation({ className }: SmiskiAnimationProps) {
   const [isHovering, setIsHovering] = useState(false);
   const [isTransitionRunning, setIsTransitionRunning] = useState(false);
 
-
   useEffect(() => {
+    // Mark the component as mounted, so we can safely render UI that depends on the current theme
+    // We need this because the theme is not visible on the server
+    setMounted(true);
+
     // Preload gif images so they're cached before use
     Object.values(phaseSources).forEach((src) => {
       const img = new window.Image();
       img.src = src;
     });
 
-    const stored = window.localStorage.getItem("theme");
-    const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-    const initialDark = stored ? stored === "dark" : prefersDark;
-
-    setIsDark(initialDark);
     setCurrentSteadyTarget(baseline);
     setCurrentSrc(phaseSources[baseline]);
   }, []);
-
-  useEffect(() => {
-    document.documentElement.classList.toggle("dark", isDark);
-    window.localStorage.setItem("theme", isDark ? "dark" : "light");
-  }, [isDark]);
 
   useEffect(() => {
     // Don't decay if the user is hovering, or a transition is running
@@ -191,7 +180,7 @@ export function SmiskiAnimation({ className }: SmiskiAnimationProps) {
     if (currentSteadyTarget !== baseline) {
       startDecay();
     }
-  }, [isDark, isHovering, isTransitionRunning])
+  }, [theme, isHovering, isTransitionRunning])
 
   const startDecay = () => {
     if (currentSteadyTarget === baseline) return;
@@ -260,22 +249,29 @@ export function SmiskiAnimation({ className }: SmiskiAnimationProps) {
 
   const handleClick = () => {
     // Toggle dark mode
-    const nextDark = !isDark;
-    setIsDark(nextDark)
+    setTheme(isDark ? "light" : "dark");
   };
 
   return (
     <div
       role="button"
       tabIndex={0}
-      aria-pressed={isDark}
-      aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}
       className={`smiski-wrapper flex flex-col items-center cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[#a1b57a] focus-visible:ring-offset-[var(--background)] ${className ?? ""}`}
       onPointerEnter={handlePointerEnter}
       onPointerLeave={handlePointerLeave}
       onClick={handleClick}
     >
-      <SmiskiSvg src={currentSrc} alt="Smiski animation" dark={isDark} />
+      {!mounted ? (
+        // Don't render Smiski until the component is mounted, but DO render an invisible placeholder so the layout doesn't shift
+        <img
+          src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1 1'%3E%3C/svg%3E"
+          alt=""
+          className="smiski-img h-24 w-24 sm:h-28 sm:w-28 invisible"
+          aria-hidden="true"
+        />
+      ) : (
+        <SmiskiSvg src={currentSrc} alt="Smiski animation" dark={isDark} />
+      )}
     </div>
   );
 }

@@ -22,17 +22,11 @@
   --surface-elevated: rgba(255, 255, 255, 0.08);
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-anonymous-pro);
-}
-
 body {
   background-color: var(--background);
   color: var(--foreground);
   font-size: 18px;
-  transition: background-color 200ms ease, color 200ms ease;
+  transition: background-color 200ms ease;
   font-family: var(--font-anonymous-pro), "Anonymous Pro", ui-monospace,
     SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New",
     monospace;
@@ -40,15 +34,10 @@ body {
 
 a {
   color: var(--link-color);
-  transition: color 200ms ease;
 }
 
 .smiski-wrapper {
   position: relative;
-}
-
-.smiski-img {
-  transition: filter 200ms ease;
 }
 
 .dark .smiski-img {
