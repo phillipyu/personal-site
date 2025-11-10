@@ -1,7 +1,7 @@
 /* eslint-disable @next/next/no-img-element */
 "use client";
 
-import { useEffect, useRef, useState, useCallback, useId } from "react";
+import { useEffect, useRef, useState, useId } from "react";
 
 type SmiskiSteady = "sleep" | "rest" | "awake";
 type SmiskiTransition =
@@ -30,16 +30,16 @@ const phaseSources: Record<SmiskiPhase, string> = {
 };
 
 const transitionDurations: Record<SmiskiTransition, number> = {
-  stir: 650,
-  wake: 800,
-  "stir-reverse": 650,
-  "wake-reverse": 800,
+  stir: 550,
+  wake: 950,
+  "stir-reverse": 550,
+  "wake-reverse": 950,
 };
 
 const HOVER_DELAY = 200;
 const DECAY_DELAYS: Record<SmiskiSteady, number> = {
   sleep: 1000,
-  rest: 1000,
+  rest: 0,
   awake: 1000,
 };
 
@@ -80,7 +80,7 @@ function SmiskiSvg({ src, alt, dark }: SmiskiSvgProps) {
       <img
         src={src}
         alt={alt}
-        className="smiski-img h-24 w-24 select-none object-contain transition-all duration-300 sm:h-28 sm:w-28"
+        className="smiski-img h-24 w-24 select-none object-contain sm:h-28 sm:w-28"
         draggable={false}
       />
     );
@@ -92,7 +92,7 @@ function SmiskiSvg({ src, alt, dark }: SmiskiSvgProps) {
 
   return (
     <svg
-      className="smiski-img h-24 w-24 select-none transition-all duration-300 sm:h-28 sm:w-28"
+      className="smiski-img h-24 w-24 select-none sm:h-28 sm:w-28"
       viewBox="0 0 512 512"
       preserveAspectRatio="xMidYMid meet"
       role="img"
@@ -145,18 +145,25 @@ function SmiskiSvg({ src, alt, dark }: SmiskiSvgProps) {
 }
 
 export function SmiskiAnimation({ className }: SmiskiAnimationProps) {
-  // final state: wake if isDark, sleep if not isDark
-  // clicking while animation in progress doesn't change the smiski (though it does toggle the theme)
-  // after a brief pause, animations always evolve towards their final state
-
+  // const [isDark, setIsDark] = useState(false);
+  // const [isDark, setIsDark] = useState(() => {
+  //   if (typeof window === "undefined") return false; // during SSR
+  //   const stored = window.localStorage.getItem("theme");
+  //   const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+  //   return stored ? stored === "dark" : prefersDark;
+  // });
   const [isDark, setIsDark] = useState(false);
-  const [currentSrc, setCurrentSrc] = useState<string>(phaseSources.sleep);
+  const baseline = isDark ? "awake" : "sleep";
 
-  const steadyRef = useRef<SmiskiSteady>("sleep");
-  const hoveringRef = useRef(false);
-  const transitionRunningRef = useRef(false);
+  const [currentSrc, setCurrentSrc] = useState<string>(phaseSources[baseline]);
+
+  const [currentSteadyTarget, setCurrentSteadyTarget] = useState<SmiskiSteady>(baseline);
+  const [isHovering, setIsHovering] = useState(false);
+  const [isTransitionRunning, setIsTransitionRunning] = useState(false);
+
 
   useEffect(() => {
+    // Preload gif images so they're cached before use
     Object.values(phaseSources).forEach((src) => {
       const img = new window.Image();
       img.src = src;
@@ -165,15 +172,10 @@ export function SmiskiAnimation({ className }: SmiskiAnimationProps) {
     const stored = window.localStorage.getItem("theme");
     const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
     const initialDark = stored ? stored === "dark" : prefersDark;
-    console.log(prefersDark, initialDark, stored)
 
-    // TODO: light -> dark transition shouldn't run on page load if starting in dark mode
     setIsDark(initialDark);
-    document.documentElement.classList.toggle("dark", initialDark);
-    window.localStorage.setItem("theme", initialDark ? "dark" : "light");
-    const baseState: SmiskiSteady = initialDark ? "awake" : "sleep";
-    steadyRef.current = baseState;
-    setCurrentSrc(phaseSources[baseState]);
+    setCurrentSteadyTarget(baseline);
+    setCurrentSrc(phaseSources[baseline]);
   }, []);
 
   useEffect(() => {
@@ -182,71 +184,63 @@ export function SmiskiAnimation({ className }: SmiskiAnimationProps) {
   }, [isDark]);
 
   useEffect(() => {
-    // ALWAYS decay towards the baseline if the current state is NOT the baseline
-    const baseline = isDark ? "awake" : "sleep";
-    if (steadyRef.current !== baseline) {
+    // Don't decay if the user is hovering, or a transition is running
+    if (isHovering || isTransitionRunning) return;
+
+    // Decay towards the baseline if the current state is NOT the baseline
+    if (currentSteadyTarget !== baseline) {
       startDecay();
     }
-  }, [steadyRef, isDark, hoveringRef])
+  }, [isDark, isHovering, isTransitionRunning])
 
   const startDecay = () => {
-    // Don't decay if a transition is already happening
-    // TODO: wait until the transition is done before continuing the decay
-    if (transitionRunningRef.current) return;
+    if (currentSteadyTarget === baseline) return;
 
-    const currentSteady = steadyRef.current;
-    const baseline = isDark ? "awake" : "sleep";
-    if (currentSteady === baseline) return;
-
-    const delay = DECAY_DELAYS[currentSteady];
+    const delay = DECAY_DELAYS[currentSteadyTarget];
      window.setTimeout(() => {
-      if (hoveringRef.current) return;
-
       goToState(baseline);
     }, delay);
   };
 
   const goToState = async (target: SmiskiSteady) => {
-    const from = steadyRef.current;
+    const from = currentSteadyTarget;
     if (from === target) {
       return;
     }
 
     // If a transition is already in progress, don't do anything
-    if (transitionRunningRef.current) {
+    if (isTransitionRunning) {
       return;
     }
 
+    setCurrentSteadyTarget(target);
     const transitionSteps = transitions[from]?.[target] ?? [];
-    transitionRunningRef.current = true;
+    setIsTransitionRunning(true);
 
-    // 2. Run through the transition steps to get to the end state (no decays in between)
+    // Run through the transition steps to get to the end state (no decays in between)
     for (const step of transitionSteps) {
       setCurrentSrc(phaseSources[step]);
       await new Promise<void>((resolve) => {
         const duration = transitionDurations[step];
-        const timeout = window.setTimeout(() => {
+        window.setTimeout(() => {
           resolve();
         }, duration);
       });
     }
 
-    // 3. Set the target state
-    steadyRef.current = target;
+    // Set the target state
     setCurrentSrc(phaseSources[target]);
-    transitionRunningRef.current = false;
+    setIsTransitionRunning(false);
   };
 
   const handlePointerEnter = () => {
-    // 1. Reset the decay and hover timers
-    hoveringRef.current = true;
+    setIsHovering(true);
 
-    if (transitionRunningRef.current) return;
+    if (isTransitionRunning) return;
 
-    // 2. Maybe transition to the "rest" state
-    const current = steadyRef.current;
+    // Maybe transition to the "rest" state
     let target: SmiskiSteady;
-    if (current === "awake" && isDark || current === "sleep" && !isDark) {
+    if (currentSteadyTarget === "awake" && isDark || currentSteadyTarget === "sleep" && !isDark) {
       // The ONLY two states where hovering should do anything are the two base states:
       // - dark mode, Smiski is awake
       // - light mode, Smiski is asleep
@@ -261,18 +255,13 @@ export function SmiskiAnimation({ className }: SmiskiAnimationProps) {
   };
 
   const handlePointerLeave = () => {
-    hoveringRef.current = false;
+    setIsHovering(false);
   };
 
   const handleClick = () => {
-    // 2. Toggle dark mode
+    // Toggle dark mode
     const nextDark = !isDark;
-    const target: SmiskiSteady = nextDark ? "awake" : "sleep";
-
     setIsDark(nextDark)
-
-    // 3. Transition to end state
-    goToState(target);
   };
 
   return (

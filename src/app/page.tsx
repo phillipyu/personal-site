@@ -88,7 +88,6 @@ export default function Home() {
             </h1>
             <SmiskiAnimation
               className="translate-y-5 [&>img]:h-20 [&>img]:w-20 sm:[&>img]:h-24 sm:[&>img]:w-24 lg:[&>img]:h-28 lg:[&>img]:w-28"
-              showCaption={false}
             />
           </div>
         </header>
