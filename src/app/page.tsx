@@ -87,7 +87,7 @@ export default function Home() {
               Phillip Yu
             </h1>
             <SmiskiAnimation
-              className="translate-y-5 [&_.smiski-img]:h-20 [&_.smiski-img]:w-20 sm:[&_.smiski-img]:h-24 sm:[&_.smiski-img]:w-24 lg:[&_.smiski-img]:h-28 lg:[&_.smiski-img]:w-28"
+              className="translate-y-8 lg:translate-y-5 [&_.smiski-img]:h-20 [&_.smiski-img]:w-20 sm:[&_.smiski-img]:h-24 sm:[&_.smiski-img]:w-24 lg:[&_.smiski-img]:h-28 lg:[&_.smiski-img]:w-28"
             />
           </div>
         </header>
