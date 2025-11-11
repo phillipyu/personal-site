@@ -88,8 +88,8 @@ function SmiskiSvg({ src, alt, dark }: SmiskiSvgProps) {
   }
 
   const outlineFilterId = `smiski-outline-${uniqueId}`;
-  const fillFilterId = `smiski-fill-${uniqueId}`;
-  const fillMaskId = `smiski-mask-${uniqueId}`;
+  const glowFilterId = `smiski-glow-${uniqueId}`;
+  const bodyFillFilterId = `smiski-body-fill-${uniqueId}`;
 
   return (
     <svg
@@ -112,26 +112,29 @@ function SmiskiSvg({ src, alt, dark }: SmiskiSvgProps) {
           />
         </filter>
 
-        <filter id={fillFilterId} colorInterpolationFilters="sRGB">
-          <feMorphology in="SourceAlpha" operator="dilate" radius="28" result="expanded" />
-          <feComponentTransfer>
-            <feFuncA type="table" tableValues="0 1" />
-          </feComponentTransfer>
+        <filter id={bodyFillFilterId} colorInterpolationFilters="sRGB">
+          <feMorphology operator="erode" radius="1.5" in="SourceAlpha" result="eroded" />
+          <feMorphology operator="dilate" radius="1.5" in="eroded" result="filled" />
         </filter>
 
-        <mask id={fillMaskId} maskUnits="userSpaceOnUse">
+        <filter id={glowFilterId} x="-50%" y="-50%" width="200%" height="200%" colorInterpolationFilters="sRGB">
+          <feGaussianBlur in="SourceAlpha" stdDeviation="8" result="blurred" />
+          <feFlood floodColor="#00ff88" floodOpacity="0.8" result="greenColor" />
+          <feComposite in="greenColor" in2="blurred" operator="in" result="glow" />
+        </filter>
+      </defs>
+
+      <g filter={`url(#${glowFilterId})`}>
+        <g filter={`url(#${bodyFillFilterId})`}>
           <image
             href={src}
             x="0"
             y="0"
             width="512"
             height="512"
-            filter={`url(#${fillFilterId})`}
           />
-        </mask>
-      </defs>
-
-      <rect width="512" height="512" fill="rgba(150,255,190,0.85)" mask={`url(#${fillMaskId})`} />
+        </g>
+      </g>
 
       <image
         href={src}
@@ -180,7 +183,7 @@ export function SmiskiAnimation({ className }: SmiskiAnimationProps) {
     if (currentSteadyTarget !== baseline) {
       startDecay();
     }
-  }, [theme, isHovering, isTransitionRunning])
+  }, [theme, isHovering, isTransitionRunning, currentSteadyTarget])
 
   const startDecay = () => {
     if (currentSteadyTarget === baseline) return;
@@ -204,10 +207,10 @@ export function SmiskiAnimation({ className }: SmiskiAnimationProps) {
 
     setCurrentSteadyTarget(target);
     const transitionSteps = transitions[from]?.[target] ?? [];
-    setIsTransitionRunning(true);
 
     // Run through the transition steps to get to the end state (no decays in between)
     for (const step of transitionSteps) {
+      setIsTransitionRunning(true);
       setCurrentSrc(phaseSources[step]);
       await new Promise<void>((resolve) => {
         const duration = transitionDurations[step];
