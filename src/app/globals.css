@@ -13,12 +13,12 @@
 
 .dark {
   --background: #0f1118;
-  --foreground: #f3f5ff;
-  --text-secondary: #cfd4ff;
-  --text-muted: #aeb4dd;
-  --text-caption: #9aa2d8;
+  --foreground: #f5fff5;
+  --text-secondary: #f0fff0;
+  --text-muted: #f0fff0;
+  --text-caption: #f0fff0;
   --border-muted: rgba(255, 255, 255, 0.2);
-  --link-color: #eef1ff;
+  --link-color: #daffda;
   --surface-elevated: rgba(255, 255, 255, 0.08);
 }
 

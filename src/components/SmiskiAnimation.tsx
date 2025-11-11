@@ -2,7 +2,7 @@
 "use client";
 
 import { useTheme } from "next-themes";
-import { useEffect, useRef, useState, useId } from "react";
+import { useEffect, useState } from "react";
 
 type SmiskiSteady = "sleep" | "rest" | "awake";
 type SmiskiTransition =
@@ -12,22 +12,27 @@ type SmiskiTransition =
   | "wake-reverse";
 type SmiskiPhase = SmiskiSteady | SmiskiTransition;
 
-const steadySources: Record<SmiskiSteady, string> = {
-  sleep: "/smiski_sleep.gif",
-  rest: "/smiski_rest.gif",
-  awake: "/smiski_awake.gif",
+const steadySources: Record<SmiskiSteady, { regular: string; glow: string }> = {
+  sleep: { regular: "/smiski_sleep.gif", glow: "/smiski_sleep_glow.gif" },
+  rest: { regular: "/smiski_rest.gif", glow: "/smiski_rest_glow.gif" },
+  awake: { regular: "/smiski_awake.gif", glow: "/smiski_awake_glow.gif" },
 };
 
-const transitionSources: Record<SmiskiTransition, string> = {
-  stir: "/smiski_stir.gif",
-  wake: "/smiski_wake.gif",
-  "stir-reverse": "/smiski_stir_reverse.gif",
-  "wake-reverse": "/smiski_wake_reverse.gif",
+const transitionSources: Record<SmiskiTransition, { regular: string; glow: string }> = {
+  stir: { regular: "/smiski_stir.gif", glow: "/smiski_stir_glow.gif" },
+  wake: { regular: "/smiski_wake.gif", glow: "/smiski_wake_glow.gif" },
+  "stir-reverse": { regular: "/smiski_stir_reverse.gif", glow: "/smiski_stir_reverse_glow.gif" },
+  "wake-reverse": { regular: "/smiski_wake_reverse.gif", glow: "/smiski_wake_reverse_glow.gif" },
 };
 
-const phaseSources: Record<SmiskiPhase, string> = {
+const phaseSources: Record<SmiskiPhase, { regular: string; glow: string }> = {
   ...steadySources,
   ...transitionSources,
+};
+
+// Helper function to get the source based on dark mode
+const getPhaseSource = (phase: SmiskiPhase, isDark: boolean): string => {
+  return isDark ? phaseSources[phase].glow : phaseSources[phase].regular;
 };
 
 const transitionDurations: Record<SmiskiTransition, number> = {
@@ -67,84 +72,19 @@ type SmiskiAnimationProps = {
   showCaption?: boolean;
 };
 
-type SmiskiSvgProps = {
+type SmiskiImageProps = {
   src: string;
   alt: string;
-  dark: boolean;
 };
 
-function SmiskiSvg({ src, alt, dark }: SmiskiSvgProps) {
-  const uniqueId = useId();
-
-  if (!dark) {
-    return (
-      <img
-        src={src}
-        alt={alt}
-        className="smiski-img h-24 w-24 select-none object-contain sm:h-28 sm:w-28"
-        draggable={false}
-      />
-    );
-  }
-
-  const outlineFilterId = `smiski-outline-${uniqueId}`;
-  const glowFilterId = `smiski-glow-${uniqueId}`;
-  const bodyFillFilterId = `smiski-body-fill-${uniqueId}`;
-
+function SmiskiImage({ src, alt }: SmiskiImageProps) {
   return (
-    <svg
-      className="smiski-img h-24 w-24 select-none sm:h-28 sm:w-28"
-      viewBox="0 0 512 512"
-      preserveAspectRatio="xMidYMid meet"
-      role="img"
-      aria-label={alt}
-    >
-      <defs>
-        <filter id={outlineFilterId} colorInterpolationFilters="sRGB">
-          <feColorMatrix
-            type="matrix"
-            values="
-              -1 0 0 0 1
-              0 -1 0 0 1
-              0 0 -1 0 1
-              0 0 0 1 0
-            "
-          />
-        </filter>
-
-        <filter id={bodyFillFilterId} colorInterpolationFilters="sRGB">
-          <feMorphology operator="erode" radius="1.5" in="SourceAlpha" result="eroded" />
-          <feMorphology operator="dilate" radius="1.5" in="eroded" result="filled" />
-        </filter>
-
-        <filter id={glowFilterId} x="-50%" y="-50%" width="200%" height="200%" colorInterpolationFilters="sRGB">
-          <feGaussianBlur in="SourceAlpha" stdDeviation="8" result="blurred" />
-          <feFlood floodColor="#00ff88" floodOpacity="0.8" result="greenColor" />
-          <feComposite in="greenColor" in2="blurred" operator="in" result="glow" />
-        </filter>
-      </defs>
-
-      <g filter={`url(#${glowFilterId})`}>
-        <g filter={`url(#${bodyFillFilterId})`}>
-          <image
-            href={src}
-            x="0"
-            y="0"
-            width="512"
-            height="512"
-          />
-        </g>
-      </g>
-
-      <image
-        href={src}
-        x="0"
-        y="0"
-        width="512"
-        height="512"
-        filter={`url(#${outlineFilterId})`}
-      />
-    </svg>
+    <img
+      src={src}
+      alt={alt}
+      className="smiski-img h-24 w-24 select-none object-contain sm:h-28 sm:w-28"
+      draggable={false}
+    />
   );
 }
 
@@ -154,8 +94,7 @@ export function SmiskiAnimation({ className }: SmiskiAnimationProps) {
   const isDark = theme === "dark";
   const baseline = isDark ? "awake" : "sleep";
 
-  const [currentSrc, setCurrentSrc] = useState<string>(phaseSources[baseline]);
-
+  const [currentPhase, setCurrentPhase] = useState<SmiskiPhase>(baseline);
   const [currentSteadyTarget, setCurrentSteadyTarget] = useState<SmiskiSteady>(baseline);
   const [isHovering, setIsHovering] = useState(false);
   const [isTransitionRunning, setIsTransitionRunning] = useState(false);
@@ -165,14 +104,16 @@ export function SmiskiAnimation({ className }: SmiskiAnimationProps) {
     // We need this because the theme is not visible on the server
     setMounted(true);
 
-    // Preload gif images so they're cached before use
-    Object.values(phaseSources).forEach((src) => {
-      const img = new window.Image();
-      img.src = src;
+    // Preload all gif images (both regular and glow) so they're cached before use
+    Object.values(phaseSources).forEach((sources) => {
+      const regularImg = new window.Image();
+      regularImg.src = sources.regular;
+      const glowImg = new window.Image();
+      glowImg.src = sources.glow;
     });
 
     setCurrentSteadyTarget(baseline);
-    setCurrentSrc(phaseSources[baseline]);
+    setCurrentPhase(baseline);
   }, []);
 
   useEffect(() => {
@@ -211,7 +152,7 @@ export function SmiskiAnimation({ className }: SmiskiAnimationProps) {
     // Run through the transition steps to get to the end state (no decays in between)
     for (const step of transitionSteps) {
       setIsTransitionRunning(true);
-      setCurrentSrc(phaseSources[step]);
+      setCurrentPhase(step);
       await new Promise<void>((resolve) => {
         const duration = transitionDurations[step];
         window.setTimeout(() => {
@@ -221,7 +162,7 @@ export function SmiskiAnimation({ className }: SmiskiAnimationProps) {
     }
 
     // Set the target state
-    setCurrentSrc(phaseSources[target]);
+    setCurrentPhase(target);
     setIsTransitionRunning(false);
   };
 
@@ -264,17 +205,28 @@ export function SmiskiAnimation({ className }: SmiskiAnimationProps) {
       onPointerLeave={handlePointerLeave}
       onClick={handleClick}
     >
-      {!mounted ? (
-        // Don't render Smiski until the component is mounted, but DO render an invisible placeholder so the layout doesn't shift
-        <img
-          src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1 1'%3E%3C/svg%3E"
-          alt=""
-          className="smiski-img h-24 w-24 sm:h-28 sm:w-28 invisible"
-          aria-hidden="true"
-        />
-      ) : (
-        <SmiskiSvg src={currentSrc} alt="Smiski animation" dark={isDark} />
-      )}
+      <div className="relative h-24 w-24 sm:h-28 sm:w-28">
+        {!mounted ? (
+          // Don't render Smiski until the component is mounted, but DO render an invisible placeholder so the layout doesn't shift
+          <img
+            src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1 1'%3E%3C/svg%3E"
+            alt=""
+            className="smiski-img h-24 w-24 sm:h-28 sm:w-28 invisible"
+            aria-hidden="true"
+          />
+        ) : (
+          <>
+            {/* Regular version - visible when NOT dark */}
+            <div className={`absolute inset-0 ${isDark ? 'opacity-0' : 'opacity-100'}`}>
+              <SmiskiImage src={phaseSources[currentPhase].regular} alt="Smiski animation" />
+            </div>
+            {/* Glow version - visible when dark */}
+            <div className={`absolute inset-y-0 -left-1.5 right-1.5 ${isDark ? 'opacity-100' : 'opacity-0'}`}>
+              <SmiskiImage src={phaseSources[currentPhase].glow} alt="Smiski glow animation" />
+            </div>
+          </>
+        )}
+      </div>
     </div>
   );
 }
